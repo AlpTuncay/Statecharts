@@ -31,7 +31,7 @@
         </regions>
         <regions xmi:id="_cOrQAPZ6EeiJha3w_e0MRg" name="Dead Man's Button">
           <vertices xsi:type="sgraph:State" xmi:id="_VCsQ5PaCEeiJha3w_e0MRg" name="CheckVelocity" incomingTransitions="_VCrpwPaCEeiJha3w_e0MRg">
-            <outgoingTransitions xmi:id="_VCs36_aCEeiJha3w_e0MRg" specification="[active(main.Movement.Move.SpeedUp) &#xD;&#xA;&#x9;|| active(main.Movement.Move.MaxSpeed) &#xD;&#xA;&#x9;|| active(main.Station) &#xD;&#xA;&#x9;|| active(main.Movement.Move.Yellow)&#xD;&#xA;]" target="_iJK4gPZ6EeiJha3w_e0MRg"/>
+            <outgoingTransitions xmi:id="_VCs36_aCEeiJha3w_e0MRg" specification="[velocity > 0]" target="_iJK4gPZ6EeiJha3w_e0MRg"/>
           </vertices>
           <vertices xsi:type="sgraph:Entry" xmi:id="_hXWaAPZ6EeiJha3w_e0MRg">
             <outgoingTransitions xmi:id="_VCrpwPaCEeiJha3w_e0MRg" specification="" target="_VCsQ5PaCEeiJha3w_e0MRg"/>
@@ -593,11 +593,11 @@
     <edges xmi:id="_nfs5kPXQEeicweTzB4btQg" type="Transition" element="_nfsSgPXQEeicweTzB4btQg" source="_wQ0-gfZ0EeiJha3w_e0MRg" target="_wQ0-r_Z0EeiJha3w_e0MRg">
       <children xsi:type="notation:DecorationNode" xmi:id="_nftgofXQEeicweTzB4btQg" type="TransitionExpression">
         <styles xsi:type="notation:ShapeStyle" xmi:id="_nftgovXQEeicweTzB4btQg"/>
-        <layoutConstraint xsi:type="notation:Location" xmi:id="_nftgo_XQEeicweTzB4btQg" x="123" y="-44"/>
+        <layoutConstraint xsi:type="notation:Location" xmi:id="_nftgo_XQEeicweTzB4btQg" x="125" y="-44"/>
       </children>
       <styles xsi:type="notation:ConnectorStyle" xmi:id="_nfs5kfXQEeicweTzB4btQg" routing="Rectilinear" lineColor="4210752"/>
       <styles xsi:type="notation:FontStyle" xmi:id="_nftgoPXQEeicweTzB4btQg" fontName="Verdana"/>
-      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_nfs5kvXQEeicweTzB4btQg" points="[16, -2, -549, -355]$[179, -2, -386, -355]$[179, 333, -386, -20]$[322, 333, -243, -20]"/>
+      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_nfs5kvXQEeicweTzB4btQg" points="[16, -6, -549, -359]$[179, -6, -386, -359]$[179, 333, -386, -20]$[322, 333, -243, -20]"/>
       <sourceAnchor xsi:type="notation:IdentityAnchor" xmi:id="_nfuHsPXQEeicweTzB4btQg" id="(0.9559228650137741,0.7619047619047619)"/>
       <targetAnchor xsi:type="notation:IdentityAnchor" xmi:id="_nfuHsfXQEeicweTzB4btQg" id="(0.875,0.6981132075471698)"/>
     </edges>
@@ -723,7 +723,7 @@
     <edges xmi:id="_VCs34vaCEeiJha3w_e0MRg" type="Transition" element="_VCs36_aCEeiJha3w_e0MRg" source="_VCsQ0PaCEeiJha3w_e0MRg" target="_eO3wy_Z7EeiJha3w_e0MRg">
       <children xsi:type="notation:DecorationNode" xmi:id="_VCs36PaCEeiJha3w_e0MRg" type="TransitionExpression">
         <styles xsi:type="notation:ShapeStyle" xmi:id="_VCs36vaCEeiJha3w_e0MRg"/>
-        <layoutConstraint xsi:type="notation:Location" xmi:id="_VCs36faCEeiJha3w_e0MRg" x="-2" y="-149"/>
+        <layoutConstraint xsi:type="notation:Location" xmi:id="_VCs36faCEeiJha3w_e0MRg" x="-5" y="-47"/>
       </children>
       <styles xsi:type="notation:ConnectorStyle" xmi:id="_VCs35_aCEeiJha3w_e0MRg" routing="Rectilinear" lineColor="4210752"/>
       <styles xsi:type="notation:FontStyle" xmi:id="_VCs35vaCEeiJha3w_e0MRg" fontName="Verdana"/>

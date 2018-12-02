@@ -1094,7 +1094,7 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
-			if (isStateActive(State.main_Movement_Move_SpeedUp) || isStateActive(State.main_Movement_Move_MaxSpeed) || isStateActive(State.main_Station) || isStateActive(State.main_Movement_Move_Yellow)) {
+			if (sCInterface.getVelocity()>0) {
 				exitSequence_main_Movement_Dead_Man_s_Button_CheckVelocity();
 				enterSequence_main_Movement_Dead_Man_s_Button_Poll_default();
 			} else {
