@@ -218,13 +218,13 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		main_Movement,
 		main_Movement_Move_Init,
 		main_Movement_Move_SpeedUp,
-		main_Movement_Move_Red,
 		main_Movement_Move_MaxSpeed,
-		main_Movement_Move_Yellow,
+		main_Movement_Move_Red,
 		main_Movement_Move_Green,
-		main_Movement_Move_AccelerateUnderYellow,
-		main_Movement_Move_SpeedUpUntilLimit,
 		main_Movement_Move_CheckSpeed,
+		main_Movement_Move_SpeedUpUntilLimit,
+		main_Movement_Move_AccelerateUnderYellow,
+		main_Movement_Move_Yellow,
 		main_Movement_Dead_Man_s_Button_CheckVelocity,
 		main_Movement_Dead_Man_s_Button_Poll,
 		main_Movement_Dead_Man_s_Button_Poll_Poll_Prompt,
@@ -236,9 +236,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		main_Station_Train_Enter,
 		main_Station_Train_DoorsOpen,
 		main_Station_Train_DoorsClose,
+		main_Station_Train_Stop,
+		main_Pause,
 		$NullState$
 	};
 	
+	private State[] historyVector = new State[1];
 	private final State[] stateVector = new State[2];
 	
 	private int nextStateIndex;
@@ -271,6 +274,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		
 		for (int i = 0; i < 2; i++) {
 			stateVector[i] = State.$NullState$;
+		}
+		for (int i = 0; i < 1; i++) {
+			historyVector[i] = State.$NullState$;
 		}
 		clearEvents();
 		clearOutEvents();
@@ -341,20 +347,20 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			return stateVector[0] == State.main_Movement_Move_Init;
 		case main_Movement_Move_SpeedUp:
 			return stateVector[0] == State.main_Movement_Move_SpeedUp;
-		case main_Movement_Move_Red:
-			return stateVector[0] == State.main_Movement_Move_Red;
 		case main_Movement_Move_MaxSpeed:
 			return stateVector[0] == State.main_Movement_Move_MaxSpeed;
-		case main_Movement_Move_Yellow:
-			return stateVector[0] == State.main_Movement_Move_Yellow;
+		case main_Movement_Move_Red:
+			return stateVector[0] == State.main_Movement_Move_Red;
 		case main_Movement_Move_Green:
 			return stateVector[0] == State.main_Movement_Move_Green;
-		case main_Movement_Move_AccelerateUnderYellow:
-			return stateVector[0] == State.main_Movement_Move_AccelerateUnderYellow;
-		case main_Movement_Move_SpeedUpUntilLimit:
-			return stateVector[0] == State.main_Movement_Move_SpeedUpUntilLimit;
 		case main_Movement_Move_CheckSpeed:
 			return stateVector[0] == State.main_Movement_Move_CheckSpeed;
+		case main_Movement_Move_SpeedUpUntilLimit:
+			return stateVector[0] == State.main_Movement_Move_SpeedUpUntilLimit;
+		case main_Movement_Move_AccelerateUnderYellow:
+			return stateVector[0] == State.main_Movement_Move_AccelerateUnderYellow;
+		case main_Movement_Move_Yellow:
+			return stateVector[0] == State.main_Movement_Move_Yellow;
 		case main_Movement_Dead_Man_s_Button_CheckVelocity:
 			return stateVector[1] == State.main_Movement_Dead_Man_s_Button_CheckVelocity;
 		case main_Movement_Dead_Man_s_Button_Poll:
@@ -373,13 +379,17 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			return stateVector[0] == State.main_Emergency_Break_EmergencyBreak;
 		case main_Station:
 			return stateVector[0].ordinal() >= State.
-					main_Station.ordinal()&& stateVector[0].ordinal() <= State.main_Station_Train_DoorsClose.ordinal();
+					main_Station.ordinal()&& stateVector[0].ordinal() <= State.main_Station_Train_Stop.ordinal();
 		case main_Station_Train_Enter:
 			return stateVector[0] == State.main_Station_Train_Enter;
 		case main_Station_Train_DoorsOpen:
 			return stateVector[0] == State.main_Station_Train_DoorsOpen;
 		case main_Station_Train_DoorsClose:
 			return stateVector[0] == State.main_Station_Train_DoorsClose;
+		case main_Station_Train_Stop:
+			return stateVector[0] == State.main_Station_Train_Stop;
+		case main_Pause:
+			return stateVector[0] == State.main_Pause;
 		default:
 			return false;
 		}
@@ -503,11 +513,6 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		setAcceleration(sCInterface.getUpdate_accelerationValue());
 	}
 	
-	/* Entry action for state 'Red'. */
-	private void entryAction_main_Movement_Move_Red() {
-		sCInterface.raiseWarning("Passing Red");
-	}
-	
 	/* Entry action for state 'MaxSpeed'. */
 	private void entryAction_main_Movement_Move_MaxSpeed() {
 		sCInterface.setVelocity(sCInterface.velocity>100 ? 100 : sCInterface.velocity);
@@ -517,11 +522,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		sCInterface.raiseWarning("Max speed reached");
 	}
 	
-	/* Entry action for state 'Yellow'. */
-	private void entryAction_main_Movement_Move_Yellow() {
-		sCInterface.raiseWarning("Passing yellow.");
-		
-		setAcceleration(0);
+	/* Entry action for state 'Red'. */
+	private void entryAction_main_Movement_Move_Red() {
+		sCInterface.raiseWarning("Passing Red");
 	}
 	
 	/* Entry action for state 'Green'. */
@@ -529,14 +532,21 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		sCInterface.raiseWarning("Saw green. Can accelerate");
 	}
 	
+	/* Entry action for state 'CheckSpeed'. */
+	private void entryAction_main_Movement_Move_CheckSpeed() {
+		sCInterface.setVelocity(sCInterface.velocity>50 ? 50 : sCInterface.velocity);
+		
+		setAcceleration(0);
+	}
+	
 	/* Entry action for state 'SpeedUpUntilLimit'. */
 	private void entryAction_main_Movement_Move_SpeedUpUntilLimit() {
 		setAcceleration(sCInterface.getUpdate_accelerationValue());
 	}
 	
-	/* Entry action for state 'CheckSpeed'. */
-	private void entryAction_main_Movement_Move_CheckSpeed() {
-		sCInterface.setVelocity(sCInterface.velocity>50 ? 50 : sCInterface.velocity);
+	/* Entry action for state 'Yellow'. */
+	private void entryAction_main_Movement_Move_Yellow() {
+		sCInterface.raiseWarning("Passing yellow.");
 		
 		setAcceleration(0);
 	}
@@ -574,8 +584,6 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	
 	/* Entry action for state 'Enter'. */
 	private void entryAction_main_Station_Train_Enter() {
-		setAcceleration(-1);
-		
 		sCInterface.raiseWarning("Enter to Station");
 	}
 	
@@ -589,6 +597,16 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	/* Entry action for state 'DoorsClose'. */
 	private void entryAction_main_Station_Train_DoorsClose() {
 		sCInterface.raiseCloseDoors();
+	}
+	
+	/* Entry action for state 'Stop'. */
+	private void entryAction_main_Station_Train_Stop() {
+		setAcceleration(sCInterface.getUpdate_accelerationValue());
+	}
+	
+	/* Entry action for state 'Pause'. */
+	private void entryAction_main_Pause() {
+		sCInterface.raiseWarning("Pause");
 	}
 	
 	/* Exit action for state 'TrainController'. */
@@ -631,6 +649,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	private void enterSequence_main_Movement_Move_Init_default() {
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_Init;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state SpeedUp */
@@ -638,13 +658,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		entryAction_main_Movement_Move_SpeedUp();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_SpeedUp;
-	}
-	
-	/* 'default' enter sequence for state Red */
-	private void enterSequence_main_Movement_Move_Red_default() {
-		entryAction_main_Movement_Move_Red();
-		nextStateIndex = 0;
-		stateVector[0] = State.main_Movement_Move_Red;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state MaxSpeed */
@@ -652,13 +667,17 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		entryAction_main_Movement_Move_MaxSpeed();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_MaxSpeed;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
-	/* 'default' enter sequence for state Yellow */
-	private void enterSequence_main_Movement_Move_Yellow_default() {
-		entryAction_main_Movement_Move_Yellow();
+	/* 'default' enter sequence for state Red */
+	private void enterSequence_main_Movement_Move_Red_default() {
+		entryAction_main_Movement_Move_Red();
 		nextStateIndex = 0;
-		stateVector[0] = State.main_Movement_Move_Yellow;
+		stateVector[0] = State.main_Movement_Move_Red;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state Green */
@@ -666,19 +685,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		entryAction_main_Movement_Move_Green();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_Green;
-	}
-	
-	/* 'default' enter sequence for state AccelerateUnderYellow */
-	private void enterSequence_main_Movement_Move_AccelerateUnderYellow_default() {
-		nextStateIndex = 0;
-		stateVector[0] = State.main_Movement_Move_AccelerateUnderYellow;
-	}
-	
-	/* 'default' enter sequence for state SpeedUpUntilLimit */
-	private void enterSequence_main_Movement_Move_SpeedUpUntilLimit_default() {
-		entryAction_main_Movement_Move_SpeedUpUntilLimit();
-		nextStateIndex = 0;
-		stateVector[0] = State.main_Movement_Move_SpeedUpUntilLimit;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state CheckSpeed */
@@ -686,6 +694,34 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		entryAction_main_Movement_Move_CheckSpeed();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_CheckSpeed;
+		
+		historyVector[0] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state SpeedUpUntilLimit */
+	private void enterSequence_main_Movement_Move_SpeedUpUntilLimit_default() {
+		entryAction_main_Movement_Move_SpeedUpUntilLimit();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Movement_Move_SpeedUpUntilLimit;
+		
+		historyVector[0] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state AccelerateUnderYellow */
+	private void enterSequence_main_Movement_Move_AccelerateUnderYellow_default() {
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Movement_Move_AccelerateUnderYellow;
+		
+		historyVector[0] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state Yellow */
+	private void enterSequence_main_Movement_Move_Yellow_default() {
+		entryAction_main_Movement_Move_Yellow();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Movement_Move_Yellow;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state CheckVelocity */
@@ -759,6 +795,20 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.main_Station_Train_DoorsClose;
 	}
 	
+	/* 'default' enter sequence for state Stop */
+	private void enterSequence_main_Station_Train_Stop_default() {
+		entryAction_main_Station_Train_Stop();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Station_Train_Stop;
+	}
+	
+	/* 'default' enter sequence for state Pause */
+	private void enterSequence_main_Pause_default() {
+		entryAction_main_Pause();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Pause;
+	}
+	
 	/* 'default' enter sequence for region main */
 	private void enterSequence_main_default() {
 		react_main__entry_Default();
@@ -767,6 +817,41 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	/* 'default' enter sequence for region Move */
 	private void enterSequence_main_Movement_Move_default() {
 		react_main_Movement_Move__entry_Default();
+	}
+	
+	/* shallow enterSequence with history in child Move */
+	private void shallowEnterSequence_main_Movement_Move() {
+		switch (historyVector[0]) {
+		case main_Movement_Move_Init:
+			enterSequence_main_Movement_Move_Init_default();
+			break;
+		case main_Movement_Move_SpeedUp:
+			enterSequence_main_Movement_Move_SpeedUp_default();
+			break;
+		case main_Movement_Move_MaxSpeed:
+			enterSequence_main_Movement_Move_MaxSpeed_default();
+			break;
+		case main_Movement_Move_Red:
+			enterSequence_main_Movement_Move_Red_default();
+			break;
+		case main_Movement_Move_Green:
+			enterSequence_main_Movement_Move_Green_default();
+			break;
+		case main_Movement_Move_CheckSpeed:
+			enterSequence_main_Movement_Move_CheckSpeed_default();
+			break;
+		case main_Movement_Move_SpeedUpUntilLimit:
+			enterSequence_main_Movement_Move_SpeedUpUntilLimit_default();
+			break;
+		case main_Movement_Move_AccelerateUnderYellow:
+			enterSequence_main_Movement_Move_AccelerateUnderYellow_default();
+			break;
+		case main_Movement_Move_Yellow:
+			enterSequence_main_Movement_Move_Yellow_default();
+			break;
+		default:
+			break;
+		}
 	}
 	
 	/* 'default' enter sequence for region Dead Man's Button */
@@ -807,20 +892,14 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.$NullState$;
 	}
 	
-	/* Default exit sequence for state Red */
-	private void exitSequence_main_Movement_Move_Red() {
-		nextStateIndex = 0;
-		stateVector[0] = State.$NullState$;
-	}
-	
 	/* Default exit sequence for state MaxSpeed */
 	private void exitSequence_main_Movement_Move_MaxSpeed() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
 	}
 	
-	/* Default exit sequence for state Yellow */
-	private void exitSequence_main_Movement_Move_Yellow() {
+	/* Default exit sequence for state Red */
+	private void exitSequence_main_Movement_Move_Red() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
 	}
@@ -831,8 +910,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.$NullState$;
 	}
 	
-	/* Default exit sequence for state AccelerateUnderYellow */
-	private void exitSequence_main_Movement_Move_AccelerateUnderYellow() {
+	/* Default exit sequence for state CheckSpeed */
+	private void exitSequence_main_Movement_Move_CheckSpeed() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
 	}
@@ -843,8 +922,14 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.$NullState$;
 	}
 	
-	/* Default exit sequence for state CheckSpeed */
-	private void exitSequence_main_Movement_Move_CheckSpeed() {
+	/* Default exit sequence for state AccelerateUnderYellow */
+	private void exitSequence_main_Movement_Move_AccelerateUnderYellow() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state Yellow */
+	private void exitSequence_main_Movement_Move_Yellow() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
 	}
@@ -920,6 +1005,18 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.$NullState$;
 	}
 	
+	/* Default exit sequence for state Stop */
+	private void exitSequence_main_Station_Train_Stop() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state Pause */
+	private void exitSequence_main_Pause() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
 	/* Default exit sequence for region main */
 	private void exitSequence_main() {
 		switch (stateVector[0]) {
@@ -929,26 +1026,26 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		case main_Movement_Move_SpeedUp:
 			exitSequence_main_Movement_Move_SpeedUp();
 			break;
-		case main_Movement_Move_Red:
-			exitSequence_main_Movement_Move_Red();
-			break;
 		case main_Movement_Move_MaxSpeed:
 			exitSequence_main_Movement_Move_MaxSpeed();
 			break;
-		case main_Movement_Move_Yellow:
-			exitSequence_main_Movement_Move_Yellow();
+		case main_Movement_Move_Red:
+			exitSequence_main_Movement_Move_Red();
 			break;
 		case main_Movement_Move_Green:
 			exitSequence_main_Movement_Move_Green();
 			break;
-		case main_Movement_Move_AccelerateUnderYellow:
-			exitSequence_main_Movement_Move_AccelerateUnderYellow();
+		case main_Movement_Move_CheckSpeed:
+			exitSequence_main_Movement_Move_CheckSpeed();
 			break;
 		case main_Movement_Move_SpeedUpUntilLimit:
 			exitSequence_main_Movement_Move_SpeedUpUntilLimit();
 			break;
-		case main_Movement_Move_CheckSpeed:
-			exitSequence_main_Movement_Move_CheckSpeed();
+		case main_Movement_Move_AccelerateUnderYellow:
+			exitSequence_main_Movement_Move_AccelerateUnderYellow();
+			break;
+		case main_Movement_Move_Yellow:
+			exitSequence_main_Movement_Move_Yellow();
 			break;
 		case main_Emergency_Break_Cooldown:
 			exitSequence_main_Emergency_Break_Cooldown();
@@ -966,6 +1063,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			break;
 		case main_Station_Train_DoorsClose:
 			exitSequence_main_Station_Train_DoorsClose();
+			break;
+		case main_Station_Train_Stop:
+			exitSequence_main_Station_Train_Stop();
+			break;
+		case main_Pause:
+			exitSequence_main_Pause();
 			break;
 		default:
 			break;
@@ -997,26 +1100,26 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		case main_Movement_Move_SpeedUp:
 			exitSequence_main_Movement_Move_SpeedUp();
 			break;
-		case main_Movement_Move_Red:
-			exitSequence_main_Movement_Move_Red();
-			break;
 		case main_Movement_Move_MaxSpeed:
 			exitSequence_main_Movement_Move_MaxSpeed();
 			break;
-		case main_Movement_Move_Yellow:
-			exitSequence_main_Movement_Move_Yellow();
+		case main_Movement_Move_Red:
+			exitSequence_main_Movement_Move_Red();
 			break;
 		case main_Movement_Move_Green:
 			exitSequence_main_Movement_Move_Green();
 			break;
-		case main_Movement_Move_AccelerateUnderYellow:
-			exitSequence_main_Movement_Move_AccelerateUnderYellow();
+		case main_Movement_Move_CheckSpeed:
+			exitSequence_main_Movement_Move_CheckSpeed();
 			break;
 		case main_Movement_Move_SpeedUpUntilLimit:
 			exitSequence_main_Movement_Move_SpeedUpUntilLimit();
 			break;
-		case main_Movement_Move_CheckSpeed:
-			exitSequence_main_Movement_Move_CheckSpeed();
+		case main_Movement_Move_AccelerateUnderYellow:
+			exitSequence_main_Movement_Move_AccelerateUnderYellow();
+			break;
+		case main_Movement_Move_Yellow:
+			exitSequence_main_Movement_Move_Yellow();
 			break;
 		default:
 			break;
@@ -1082,6 +1185,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		case main_Station_Train_DoorsClose:
 			exitSequence_main_Station_Train_DoorsClose();
 			break;
+		case main_Station_Train_Stop:
+			exitSequence_main_Station_Train_Stop();
+			break;
 		default:
 			break;
 		}
@@ -1090,6 +1196,16 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	/* Default react sequence for initial entry  */
 	private void react_main_Movement_Move__entry_Default() {
 		enterSequence_main_Movement_Move_Init_default();
+	}
+	
+	/* Default react sequence for shallow history entry hist */
+	private void react_main_Movement_Move_hist() {
+		/* Enter the region with shallow history */
+		if (historyVector[0] != State.$NullState$) {
+			shallowEnterSequence_main_Movement_Move();
+		} else {
+			enterSequence_main_Movement_Move_Init_default();
+		}
 	}
 	
 	/* Default react sequence for initial entry  */
@@ -1137,7 +1253,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 					exitSequence_main_Movement();
 					enterSequence_main_Station_default();
 				} else {
-					did_transition = false;
+					if (sCInterface.pause) {
+						exitSequence_main_Movement();
+						enterSequence_main_Pause_default();
+					} else {
+						did_transition = false;
+					}
 				}
 			}
 		}
@@ -1197,24 +1318,6 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		return did_transition;
 	}
 	
-	private boolean main_Movement_Move_Red_react(boolean try_transition) {
-		boolean did_transition = try_transition;
-		
-		if (try_transition) {
-			if (main_Movement_react(try_transition)==false) {
-				if (sCInterface.getVelocity()>0) {
-					exitSequence_main_Movement();
-					enterSequence_main_Emergency_default();
-				} else {
-					did_transition = false;
-				}
-			}
-		}
-		if (did_transition==false) {
-		}
-		return did_transition;
-	}
-	
 	private boolean main_Movement_Move_MaxSpeed_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
@@ -1234,6 +1337,116 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 						} else {
 							did_transition = false;
 						}
+					}
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_Red_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_react(try_transition)==false) {
+				if (sCInterface.getVelocity()>0) {
+					exitSequence_main_Movement();
+					enterSequence_main_Emergency_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_Green_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_react(try_transition)==false) {
+				if (sCInterface.update_acceleration) {
+					exitSequence_main_Movement_Move_Green();
+					enterSequence_main_Movement_Move_SpeedUp_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_CheckSpeed_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_react(try_transition)==false) {
+				if (sCInterface.green_light) {
+					exitSequence_main_Movement_Move_CheckSpeed();
+					enterSequence_main_Movement_Move_Green_default();
+				} else {
+					if (sCInterface.update_acceleration) {
+						exitSequence_main_Movement_Move_CheckSpeed();
+						enterSequence_main_Movement_Move_SpeedUpUntilLimit_default();
+					} else {
+						did_transition = false;
+					}
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_SpeedUpUntilLimit_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_react(try_transition)==false) {
+				if (sCInterface.update_acceleration) {
+					exitSequence_main_Movement_Move_SpeedUpUntilLimit();
+					enterSequence_main_Movement_Move_SpeedUpUntilLimit_default();
+				} else {
+					if (sCInterface.getVelocity()>50) {
+						exitSequence_main_Movement_Move_SpeedUpUntilLimit();
+						enterSequence_main_Movement_Move_CheckSpeed_default();
+					} else {
+						if (sCInterface.green_light) {
+							exitSequence_main_Movement_Move_SpeedUpUntilLimit();
+							enterSequence_main_Movement_Move_Green_default();
+						} else {
+							did_transition = false;
+						}
+					}
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_AccelerateUnderYellow_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_react(try_transition)==false) {
+				if (sCInterface.update_acceleration) {
+					exitSequence_main_Movement_Move_AccelerateUnderYellow();
+					enterSequence_main_Movement_Move_SpeedUpUntilLimit_default();
+				} else {
+					if (sCInterface.green_light) {
+						exitSequence_main_Movement_Move_AccelerateUnderYellow();
+						enterSequence_main_Movement_Move_Green_default();
+					} else {
+						did_transition = false;
 					}
 				}
 			}
@@ -1264,78 +1477,6 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 						}
 					}
 				}
-			}
-		}
-		if (did_transition==false) {
-		}
-		return did_transition;
-	}
-	
-	private boolean main_Movement_Move_Green_react(boolean try_transition) {
-		boolean did_transition = try_transition;
-		
-		if (try_transition) {
-			if (main_Movement_react(try_transition)==false) {
-				if (sCInterface.update_acceleration) {
-					exitSequence_main_Movement_Move_Green();
-					enterSequence_main_Movement_Move_SpeedUp_default();
-				} else {
-					did_transition = false;
-				}
-			}
-		}
-		if (did_transition==false) {
-		}
-		return did_transition;
-	}
-	
-	private boolean main_Movement_Move_AccelerateUnderYellow_react(boolean try_transition) {
-		boolean did_transition = try_transition;
-		
-		if (try_transition) {
-			if (main_Movement_react(try_transition)==false) {
-				if (sCInterface.update_acceleration) {
-					exitSequence_main_Movement_Move_AccelerateUnderYellow();
-					enterSequence_main_Movement_Move_SpeedUpUntilLimit_default();
-				} else {
-					did_transition = false;
-				}
-			}
-		}
-		if (did_transition==false) {
-		}
-		return did_transition;
-	}
-	
-	private boolean main_Movement_Move_SpeedUpUntilLimit_react(boolean try_transition) {
-		boolean did_transition = try_transition;
-		
-		if (try_transition) {
-			if (main_Movement_react(try_transition)==false) {
-				if (sCInterface.update_acceleration) {
-					exitSequence_main_Movement_Move_SpeedUpUntilLimit();
-					enterSequence_main_Movement_Move_SpeedUpUntilLimit_default();
-				} else {
-					if (sCInterface.getVelocity()>50) {
-						exitSequence_main_Movement_Move_SpeedUpUntilLimit();
-						enterSequence_main_Movement_Move_CheckSpeed_default();
-					} else {
-						did_transition = false;
-					}
-				}
-			}
-		}
-		if (did_transition==false) {
-		}
-		return did_transition;
-	}
-	
-	private boolean main_Movement_Move_CheckSpeed_react(boolean try_transition) {
-		boolean did_transition = try_transition;
-		
-		if (try_transition) {
-			if (main_Movement_react(try_transition)==false) {
-				did_transition = false;
 			}
 		}
 		if (did_transition==false) {
@@ -1465,11 +1606,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		
 		if (try_transition) {
 			if (react(try_transition)==false) {
-				if (sCInterface.update_acceleration) {
+				if (sCInterface.getVelocity()>20) {
 					exitSequence_main_Station();
-					sCInterface.raiseLeave();
-					
-					enterSequence_main_Movement_default();
+					enterSequence_main_Emergency_default();
 				} else {
 					did_transition = false;
 				}
@@ -1485,16 +1624,11 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		
 		if (try_transition) {
 			if (main_Station_react(try_transition)==false) {
-				if (sCInterface.getVelocity()>20) {
-					exitSequence_main_Station();
-					enterSequence_main_Emergency_default();
+				if (sCInterface.update_acceleration) {
+					exitSequence_main_Station_Train_Enter();
+					enterSequence_main_Station_Train_Stop_default();
 				} else {
-					if (sCInterface.open) {
-						exitSequence_main_Station_Train_Enter();
-						enterSequence_main_Station_Train_DoorsOpen_default();
-					} else {
-						did_transition = false;
-					}
+					did_transition = false;
 				}
 			}
 		}
@@ -1528,7 +1662,61 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		
 		if (try_transition) {
 			if (main_Station_react(try_transition)==false) {
-				did_transition = false;
+				if (sCInterface.update_acceleration) {
+					exitSequence_main_Station_Train_DoorsClose();
+					enterSequence_main_Station_Train_Stop_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Station_Train_Stop_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Station_react(try_transition)==false) {
+				if (sCInterface.open) {
+					exitSequence_main_Station_Train_Stop();
+					enterSequence_main_Station_Train_DoorsOpen_default();
+				} else {
+					if (sCInterface.update_acceleration) {
+						exitSequence_main_Station_Train_Stop();
+						enterSequence_main_Station_Train_Stop_default();
+					} else {
+						if (sCInterface.leave) {
+							exitSequence_main_Station();
+							enterSequence_main_Movement_default();
+						} else {
+							did_transition = false;
+						}
+					}
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Pause_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (react(try_transition)==false) {
+				if (sCInterface.continueEvent) {
+					exitSequence_main_Pause();
+					sCInterface.raiseClearWarning();
+					
+					react_main_Movement_Move_hist();
+					enterSequence_main_Movement_Dead_Man_s_Button_default();
+				} else {
+					did_transition = false;
+				}
 			}
 		}
 		if (did_transition==false) {
@@ -1549,26 +1737,26 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			case main_Movement_Move_SpeedUp:
 				main_Movement_Move_SpeedUp_react(true);
 				break;
-			case main_Movement_Move_Red:
-				main_Movement_Move_Red_react(true);
-				break;
 			case main_Movement_Move_MaxSpeed:
 				main_Movement_Move_MaxSpeed_react(true);
 				break;
-			case main_Movement_Move_Yellow:
-				main_Movement_Move_Yellow_react(true);
+			case main_Movement_Move_Red:
+				main_Movement_Move_Red_react(true);
 				break;
 			case main_Movement_Move_Green:
 				main_Movement_Move_Green_react(true);
 				break;
-			case main_Movement_Move_AccelerateUnderYellow:
-				main_Movement_Move_AccelerateUnderYellow_react(true);
+			case main_Movement_Move_CheckSpeed:
+				main_Movement_Move_CheckSpeed_react(true);
 				break;
 			case main_Movement_Move_SpeedUpUntilLimit:
 				main_Movement_Move_SpeedUpUntilLimit_react(true);
 				break;
-			case main_Movement_Move_CheckSpeed:
-				main_Movement_Move_CheckSpeed_react(true);
+			case main_Movement_Move_AccelerateUnderYellow:
+				main_Movement_Move_AccelerateUnderYellow_react(true);
+				break;
+			case main_Movement_Move_Yellow:
+				main_Movement_Move_Yellow_react(true);
 				break;
 			case main_Movement_Dead_Man_s_Button_CheckVelocity:
 				main_Movement_Dead_Man_s_Button_CheckVelocity_react(true);
@@ -1593,6 +1781,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 				break;
 			case main_Station_Train_DoorsClose:
 				main_Station_Train_DoorsClose_react(true);
+				break;
+			case main_Station_Train_Stop:
+				main_Station_Train_Stop_react(true);
+				break;
+			case main_Pause:
+				main_Pause_react(true);
 				break;
 			default:
 				// $NullState$
