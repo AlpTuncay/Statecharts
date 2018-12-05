@@ -228,10 +228,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		main_Movement_Move_Composite_Init_SpeedUp_MaxSpeed_Red_Green_CheckSpeed_SpeedUpUntilLimit_AccelerateUnderYellow_Yellow_inner_region_Yellow,
 		main_Movement_Move_Station,
 		main_Movement_Move_Station_Train_Enter,
-		main_Movement_Move_Station_Train_DoorsOpen,
+		main_Movement_Move_Station_Train_CanOpenDoors,
 		main_Movement_Move_Station_Train_DoorsClose,
 		main_Movement_Move_Station_Train_CheckSpeed,
 		main_Movement_Move_Station_Train_CloseDoors,
+		main_Movement_Move_Station_Train_DoorsOpen,
+		main_Movement_Move_Station_Train_Leave,
 		main_Movement_Dead_Man_s_Button_CheckVelocity,
 		main_Movement_Dead_Man_s_Button_Poll,
 		main_Movement_Dead_Man_s_Button_Poll_Poll_Prompt,
@@ -240,6 +242,7 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		main_Emergency_Break_Cooldown,
 		main_Emergency_Break_EmergencyBreak,
 		main_pause,
+		main_EmergencyPause,
 		$NullState$
 	};
 	
@@ -392,17 +395,21 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			return stateVector[0] == State.main_Movement_Move_Composite_Init_SpeedUp_MaxSpeed_Red_Green_CheckSpeed_SpeedUpUntilLimit_AccelerateUnderYellow_Yellow_inner_region_Yellow;
 		case main_Movement_Move_Station:
 			return stateVector[0].ordinal() >= State.
-					main_Movement_Move_Station.ordinal()&& stateVector[0].ordinal() <= State.main_Movement_Move_Station_Train_CloseDoors.ordinal();
+					main_Movement_Move_Station.ordinal()&& stateVector[0].ordinal() <= State.main_Movement_Move_Station_Train_Leave.ordinal();
 		case main_Movement_Move_Station_Train_Enter:
 			return stateVector[0] == State.main_Movement_Move_Station_Train_Enter;
-		case main_Movement_Move_Station_Train_DoorsOpen:
-			return stateVector[0] == State.main_Movement_Move_Station_Train_DoorsOpen;
+		case main_Movement_Move_Station_Train_CanOpenDoors:
+			return stateVector[0] == State.main_Movement_Move_Station_Train_CanOpenDoors;
 		case main_Movement_Move_Station_Train_DoorsClose:
 			return stateVector[0] == State.main_Movement_Move_Station_Train_DoorsClose;
 		case main_Movement_Move_Station_Train_CheckSpeed:
 			return stateVector[0] == State.main_Movement_Move_Station_Train_CheckSpeed;
 		case main_Movement_Move_Station_Train_CloseDoors:
 			return stateVector[0] == State.main_Movement_Move_Station_Train_CloseDoors;
+		case main_Movement_Move_Station_Train_DoorsOpen:
+			return stateVector[0] == State.main_Movement_Move_Station_Train_DoorsOpen;
+		case main_Movement_Move_Station_Train_Leave:
+			return stateVector[0] == State.main_Movement_Move_Station_Train_Leave;
 		case main_Movement_Dead_Man_s_Button_CheckVelocity:
 			return stateVector[1] == State.main_Movement_Dead_Man_s_Button_CheckVelocity;
 		case main_Movement_Dead_Man_s_Button_Poll:
@@ -421,6 +428,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			return stateVector[0] == State.main_Emergency_Break_EmergencyBreak;
 		case main_pause:
 			return stateVector[0] == State.main_pause;
+		case main_EmergencyPause:
+			return stateVector[0] == State.main_EmergencyPause;
 		default:
 			return false;
 		}
@@ -577,13 +586,6 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		sCInterface.raiseWarning("Enter to Station");
 	}
 	
-	/* Entry action for state 'DoorsOpen'. */
-	private void entryAction_main_Movement_Move_Station_Train_DoorsOpen() {
-		timer.setTimer(this, 0, 5 * 1000, false);
-		
-		sCInterface.raiseOpenDoors();
-	}
-	
 	/* Entry action for state 'DoorsClose'. */
 	private void entryAction_main_Movement_Move_Station_Train_DoorsClose() {
 		sCInterface.raiseCloseDoors();
@@ -591,14 +593,16 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		sCInterface.raiseClearWarning();
 	}
 	
-	/* Entry action for state 'CheckSpeed'. */
-	private void entryAction_main_Movement_Move_Station_Train_CheckSpeed() {
-		setAcceleration(sCInterface.getUpdate_accelerationValue());
-	}
-	
 	/* Entry action for state 'CloseDoors'. */
 	private void entryAction_main_Movement_Move_Station_Train_CloseDoors() {
 		sCInterface.raiseWarning("Close");
+	}
+	
+	/* Entry action for state 'DoorsOpen'. */
+	private void entryAction_main_Movement_Move_Station_Train_DoorsOpen() {
+		timer.setTimer(this, 0, 5 * 1000, false);
+		
+		sCInterface.raiseOpenDoors();
 	}
 	
 	/* Entry action for state 'CheckVelocity'. */
@@ -639,6 +643,19 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	
 	/* Entry action for state 'pause'. */
 	private void entryAction_main_pause() {
+		setTemp_acceleration(acceleration);
+		
+		setTemp_velocity(sCInterface.velocity);
+		
+		setAcceleration(0);
+		
+		sCInterface.setVelocity(0);
+		
+		sCInterface.raiseWarning("Pause");
+	}
+	
+	/* Entry action for state 'EmergencyPause'. */
+	private void entryAction_main_EmergencyPause() {
 		setTemp_acceleration(acceleration);
 		
 		setTemp_velocity(sCInterface.velocity);
@@ -785,11 +802,10 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.main_Movement_Move_Station_Train_Enter;
 	}
 	
-	/* 'default' enter sequence for state DoorsOpen */
-	private void enterSequence_main_Movement_Move_Station_Train_DoorsOpen_default() {
-		entryAction_main_Movement_Move_Station_Train_DoorsOpen();
+	/* 'default' enter sequence for state CanOpenDoors */
+	private void enterSequence_main_Movement_Move_Station_Train_CanOpenDoors_default() {
 		nextStateIndex = 0;
-		stateVector[0] = State.main_Movement_Move_Station_Train_DoorsOpen;
+		stateVector[0] = State.main_Movement_Move_Station_Train_CanOpenDoors;
 	}
 	
 	/* 'default' enter sequence for state DoorsClose */
@@ -801,7 +817,6 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	
 	/* 'default' enter sequence for state CheckSpeed */
 	private void enterSequence_main_Movement_Move_Station_Train_CheckSpeed_default() {
-		entryAction_main_Movement_Move_Station_Train_CheckSpeed();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_Station_Train_CheckSpeed;
 	}
@@ -811,6 +826,19 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		entryAction_main_Movement_Move_Station_Train_CloseDoors();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_Movement_Move_Station_Train_CloseDoors;
+	}
+	
+	/* 'default' enter sequence for state DoorsOpen */
+	private void enterSequence_main_Movement_Move_Station_Train_DoorsOpen_default() {
+		entryAction_main_Movement_Move_Station_Train_DoorsOpen();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Movement_Move_Station_Train_DoorsOpen;
+	}
+	
+	/* 'default' enter sequence for state Leave */
+	private void enterSequence_main_Movement_Move_Station_Train_Leave_default() {
+		nextStateIndex = 0;
+		stateVector[0] = State.main_Movement_Move_Station_Train_Leave;
 	}
 	
 	/* 'default' enter sequence for state CheckVelocity */
@@ -868,6 +896,13 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		entryAction_main_pause();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_pause;
+	}
+	
+	/* 'default' enter sequence for state EmergencyPause */
+	private void enterSequence_main_EmergencyPause_default() {
+		entryAction_main_EmergencyPause();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_EmergencyPause;
 	}
 	
 	/* 'default' enter sequence for region main */
@@ -1030,12 +1065,10 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.$NullState$;
 	}
 	
-	/* Default exit sequence for state DoorsOpen */
-	private void exitSequence_main_Movement_Move_Station_Train_DoorsOpen() {
+	/* Default exit sequence for state CanOpenDoors */
+	private void exitSequence_main_Movement_Move_Station_Train_CanOpenDoors() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
-		
-		exitAction_main_Movement_Move_Station_Train_DoorsOpen();
 	}
 	
 	/* Default exit sequence for state DoorsClose */
@@ -1052,6 +1085,20 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 	
 	/* Default exit sequence for state CloseDoors */
 	private void exitSequence_main_Movement_Move_Station_Train_CloseDoors() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state DoorsOpen */
+	private void exitSequence_main_Movement_Move_Station_Train_DoorsOpen() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+		
+		exitAction_main_Movement_Move_Station_Train_DoorsOpen();
+	}
+	
+	/* Default exit sequence for state Leave */
+	private void exitSequence_main_Movement_Move_Station_Train_Leave() {
 		nextStateIndex = 0;
 		stateVector[0] = State.$NullState$;
 	}
@@ -1110,6 +1157,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		stateVector[0] = State.$NullState$;
 	}
 	
+	/* Default exit sequence for state EmergencyPause */
+	private void exitSequence_main_EmergencyPause() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
 	/* Default exit sequence for region main */
 	private void exitSequence_main() {
 		switch (stateVector[0]) {
@@ -1143,8 +1196,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		case main_Movement_Move_Station_Train_Enter:
 			exitSequence_main_Movement_Move_Station_Train_Enter();
 			break;
-		case main_Movement_Move_Station_Train_DoorsOpen:
-			exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+		case main_Movement_Move_Station_Train_CanOpenDoors:
+			exitSequence_main_Movement_Move_Station_Train_CanOpenDoors();
 			break;
 		case main_Movement_Move_Station_Train_DoorsClose:
 			exitSequence_main_Movement_Move_Station_Train_DoorsClose();
@@ -1154,6 +1207,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			break;
 		case main_Movement_Move_Station_Train_CloseDoors:
 			exitSequence_main_Movement_Move_Station_Train_CloseDoors();
+			break;
+		case main_Movement_Move_Station_Train_DoorsOpen:
+			exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+			break;
+		case main_Movement_Move_Station_Train_Leave:
+			exitSequence_main_Movement_Move_Station_Train_Leave();
 			break;
 		case main_Emergency_Break_Cooldown:
 			exitSequence_main_Emergency_Break_Cooldown();
@@ -1165,6 +1224,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			break;
 		case main_pause:
 			exitSequence_main_pause();
+			break;
+		case main_EmergencyPause:
+			exitSequence_main_EmergencyPause();
 			break;
 		default:
 			break;
@@ -1220,8 +1282,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		case main_Movement_Move_Station_Train_Enter:
 			exitSequence_main_Movement_Move_Station_Train_Enter();
 			break;
-		case main_Movement_Move_Station_Train_DoorsOpen:
-			exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+		case main_Movement_Move_Station_Train_CanOpenDoors:
+			exitSequence_main_Movement_Move_Station_Train_CanOpenDoors();
 			break;
 		case main_Movement_Move_Station_Train_DoorsClose:
 			exitSequence_main_Movement_Move_Station_Train_DoorsClose();
@@ -1231,6 +1293,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			break;
 		case main_Movement_Move_Station_Train_CloseDoors:
 			exitSequence_main_Movement_Move_Station_Train_CloseDoors();
+			break;
+		case main_Movement_Move_Station_Train_DoorsOpen:
+			exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+			break;
+		case main_Movement_Move_Station_Train_Leave:
+			exitSequence_main_Movement_Move_Station_Train_Leave();
 			break;
 		default:
 			break;
@@ -1278,8 +1346,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		case main_Movement_Move_Station_Train_Enter:
 			exitSequence_main_Movement_Move_Station_Train_Enter();
 			break;
-		case main_Movement_Move_Station_Train_DoorsOpen:
-			exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+		case main_Movement_Move_Station_Train_CanOpenDoors:
+			exitSequence_main_Movement_Move_Station_Train_CanOpenDoors();
 			break;
 		case main_Movement_Move_Station_Train_DoorsClose:
 			exitSequence_main_Movement_Move_Station_Train_DoorsClose();
@@ -1289,6 +1357,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			break;
 		case main_Movement_Move_Station_Train_CloseDoors:
 			exitSequence_main_Movement_Move_Station_Train_CloseDoors();
+			break;
+		case main_Movement_Move_Station_Train_DoorsOpen:
+			exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+			break;
+		case main_Movement_Move_Station_Train_Leave:
+			exitSequence_main_Movement_Move_Station_Train_Leave();
 			break;
 		default:
 			break;
@@ -1728,14 +1802,14 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		return did_transition;
 	}
 	
-	private boolean main_Movement_Move_Station_Train_DoorsOpen_react(boolean try_transition) {
+	private boolean main_Movement_Move_Station_Train_CanOpenDoors_react(boolean try_transition) {
 		boolean did_transition = try_transition;
 		
 		if (try_transition) {
 			if (main_Movement_Move_Station_react(try_transition)==false) {
-				if (timeEvents[0]) {
-					exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
-					enterSequence_main_Movement_Move_Station_Train_CloseDoors_default();
+				if (sCInterface.open) {
+					exitSequence_main_Movement_Move_Station_Train_CanOpenDoors();
+					enterSequence_main_Movement_Move_Station_Train_DoorsOpen_default();
 				} else {
 					did_transition = false;
 				}
@@ -1755,7 +1829,7 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 					exitSequence_main_Movement_Move_Station_Train_DoorsClose();
 					setAcceleration(sCInterface.getUpdate_accelerationValue());
 					
-					enterSequence_main_Movement_Move_Station_Train_CheckSpeed_default();
+					enterSequence_main_Movement_Move_Station_Train_Leave_default();
 				} else {
 					did_transition = false;
 				}
@@ -1771,9 +1845,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 		
 		if (try_transition) {
 			if (main_Movement_Move_Station_react(try_transition)==false) {
-				if (sCInterface.open) {
+				if (sCInterface.getVelocity()==0) {
 					exitSequence_main_Movement_Move_Station_Train_CheckSpeed();
-					enterSequence_main_Movement_Move_Station_Train_DoorsOpen_default();
+					enterSequence_main_Movement_Move_Station_Train_CanOpenDoors_default();
 				} else {
 					if (sCInterface.update_acceleration) {
 						exitSequence_main_Movement_Move_Station_Train_CheckSpeed();
@@ -1781,14 +1855,7 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 						
 						enterSequence_main_Movement_Move_Station_Train_CheckSpeed_default();
 					} else {
-						if (sCInterface.leave) {
-							exitSequence_main_Movement_Move_Station();
-							sCInterface.raiseWarning("Leaving");
-							
-							enterSequence_main_Movement_Move_Composite_Init_SpeedUp_MaxSpeed_Red_Green_CheckSpeed_SpeedUpUntilLimit_AccelerateUnderYellow_Yellow_default();
-						} else {
-							did_transition = false;
-						}
+						did_transition = false;
 					}
 				}
 			}
@@ -1808,6 +1875,51 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 					enterSequence_main_Movement_Move_Station_Train_DoorsClose_default();
 				} else {
 					did_transition = false;
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_Station_Train_DoorsOpen_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_Move_Station_react(try_transition)==false) {
+				if (timeEvents[0]) {
+					exitSequence_main_Movement_Move_Station_Train_DoorsOpen();
+					enterSequence_main_Movement_Move_Station_Train_CloseDoors_default();
+				} else {
+					did_transition = false;
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_Movement_Move_Station_Train_Leave_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (main_Movement_Move_Station_react(try_transition)==false) {
+				if (sCInterface.leave) {
+					exitSequence_main_Movement_Move_Station();
+					sCInterface.raiseWarning("Leaving");
+					
+					enterSequence_main_Movement_Move_Composite_Init_SpeedUp_MaxSpeed_Red_Green_CheckSpeed_SpeedUpUntilLimit_AccelerateUnderYellow_Yellow_default();
+				} else {
+					if (sCInterface.update_acceleration) {
+						exitSequence_main_Movement_Move_Station_Train_Leave();
+						setAcceleration(sCInterface.getUpdate_accelerationValue());
+						
+						enterSequence_main_Movement_Move_Station_Train_Leave_default();
+					} else {
+						did_transition = false;
+					}
 				}
 			}
 		}
@@ -1891,7 +2003,7 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			if (react(try_transition)==false) {
 				if (sCInterface.pause) {
 					exitSequence_main_Emergency();
-					enterSequence_main_pause_default();
+					enterSequence_main_EmergencyPause_default();
 				} else {
 					did_transition = false;
 				}
@@ -1954,18 +2066,31 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 					react_main_Movement_Move_Composite_Init_SpeedUp_MaxSpeed_Red_Green_CheckSpeed_SpeedUpUntilLimit_AccelerateUnderYellow_Yellow_inner_region_Hist();
 					enterSequence_main_Movement_Dead_Man_s_Button_default();
 				} else {
-					if (sCInterface.continueEvent) {
-						exitSequence_main_pause();
-						sCInterface.raiseClearWarning();
-						
-						setAcceleration(temp_acceleration);
-						
-						sCInterface.setVelocity(temp_velocity);
-						
-						react_main_Emergency_Break_HistEmergency();
-					} else {
-						did_transition = false;
-					}
+					did_transition = false;
+				}
+			}
+		}
+		if (did_transition==false) {
+		}
+		return did_transition;
+	}
+	
+	private boolean main_EmergencyPause_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (react(try_transition)==false) {
+				if (sCInterface.continueEvent) {
+					exitSequence_main_EmergencyPause();
+					sCInterface.raiseClearWarning();
+					
+					setAcceleration(temp_acceleration);
+					
+					sCInterface.setVelocity(temp_velocity);
+					
+					react_main_Emergency_Break_HistEmergency();
+				} else {
+					did_transition = false;
 				}
 			}
 		}
@@ -2011,8 +2136,8 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 			case main_Movement_Move_Station_Train_Enter:
 				main_Movement_Move_Station_Train_Enter_react(true);
 				break;
-			case main_Movement_Move_Station_Train_DoorsOpen:
-				main_Movement_Move_Station_Train_DoorsOpen_react(true);
+			case main_Movement_Move_Station_Train_CanOpenDoors:
+				main_Movement_Move_Station_Train_CanOpenDoors_react(true);
 				break;
 			case main_Movement_Move_Station_Train_DoorsClose:
 				main_Movement_Move_Station_Train_DoorsClose_react(true);
@@ -2022,6 +2147,12 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 				break;
 			case main_Movement_Move_Station_Train_CloseDoors:
 				main_Movement_Move_Station_Train_CloseDoors_react(true);
+				break;
+			case main_Movement_Move_Station_Train_DoorsOpen:
+				main_Movement_Move_Station_Train_DoorsOpen_react(true);
+				break;
+			case main_Movement_Move_Station_Train_Leave:
+				main_Movement_Move_Station_Train_Leave_react(true);
 				break;
 			case main_Movement_Dead_Man_s_Button_CheckVelocity:
 				main_Movement_Dead_Man_s_Button_CheckVelocity_react(true);
@@ -2040,6 +2171,9 @@ public class TrainControllerStatemachine implements ITrainControllerStatemachine
 				break;
 			case main_pause:
 				main_pause_react(true);
+				break;
+			case main_EmergencyPause:
+				main_EmergencyPause_react(true);
 				break;
 			default:
 				// $NullState$
